@@ -1,0 +1,102 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  
+}
+
+model User {
+  id       String    @id @default(cuid())
+  email    String    @unique
+  name     String?
+  image    String?
+  emailVerified DateTime?
+  channels Channel[]
+  settings Setting?
+  accounts Account[]
+  sessions Session[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Channel {
+  id               String  @id @default(cuid())
+  userId           String
+  youtubeChannelId String  @unique
+  channelName      String?
+  user             User    @relation(fields: [userId], references: [id])
+  videos           Video[]
+}
+
+model Video {
+  id          String    @id @default(cuid())
+  channelId   String
+  youtubeId   String    @unique
+  title       String
+  description String?
+  indexed     Boolean   @default(false)
+  channel     Channel   @relation(fields: [channelId], references: [id])
+  comments    Comment[]
+}
+
+model Comment {
+  id          String   @id @default(cuid())
+  videoId     String
+  commentText String
+  authorName  String?
+  youtubeId   String?  @unique
+  video       Video    @relation(fields: [videoId], references: [id])
+  replies     Reply[]
+}
+
+model Reply {
+  id        String      @id @default(cuid())
+  commentId String
+  replyText String
+  status    ReplyStatus @default(PENDING)
+  comment   Comment     @relation(fields: [commentId], references: [id])
+}
+
+model Setting {
+  id           String  @id @default(cuid())
+  userId       String  @unique
+  replyMode    String  @default("manual")
+  replyTone    String  @default("friendly")
+  customPrompt String?
+  user         User    @relation(fields: [userId], references: [id])
+}
+
+enum ReplyStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  POSTED
+}
+
+
