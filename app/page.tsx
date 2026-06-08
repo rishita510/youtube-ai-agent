@@ -7,7 +7,7 @@ export default function LandingPage() {
           Reply to YouTube comments automatically using AI.
         </p>
         
-         <a href="/api/auth/signin?callbackUrl=http%3A%2F%2Flocalhost%3A3000%2Fdashboard"
+         <a href="/api/auth/signin?callbackUrl=https%3A%2F%2Fyoutube-ai-agent-tksl.onrender.com%2Fdashboard"
           className="inline-block bg-white text-black font-semibold px-8 py-3 rounded-full hover:bg-gray-200 transition"
         >
           Connect YouTube
