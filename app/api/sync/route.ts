@@ -9,7 +9,7 @@ export async function POST() {
   }
 
   // Call n8n webhook
-  await fetch("https://n8n-lf3w.onrender.com/webhook/sync-videos", {
+  await fetch("https://rishita24.app.n8n.cloud/webhook/sync-videos", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ userId: session.user.id }),
