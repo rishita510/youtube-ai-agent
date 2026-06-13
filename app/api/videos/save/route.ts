@@ -57,11 +57,11 @@ import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
 
 export async function POST(req: Request) {
-  const secret = req.headers.get("x-n8n-secret")
+  // const secret = req.headers.get("x-n8n-secret")
 
-  if (secret !== process.env.N8N_SECRET) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
+  // if (secret !== process.env.N8N_SECRET) {
+  //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  // }
 
   const { videos, userId } = await req.json()
 
