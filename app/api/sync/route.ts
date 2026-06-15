@@ -116,7 +116,8 @@ export async function POST() {
       videos: saved.length,
       comments: totalComments
     })
-  } catch (error) {
+  } 
+  catch (error) {
     console.error("Sync error:", error)
     return NextResponse.json({ error: "Sync failed" }, { status: 500 })
   }
