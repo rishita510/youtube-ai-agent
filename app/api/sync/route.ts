@@ -76,9 +76,49 @@ export async function POST() {
       )
     )
 
-    return NextResponse.json({ success: true, saved: saved.length })
+
+    // 4. Fetch comments for each video
+    let totalComments = 0
+    for (const video of saved) {
+      try {
+        const commentsRes = await fetch(
+          `https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&videoId=${video.youtubeId}&maxResults=100&key=${YOUTUBE_API_KEY}`
+        )
+        const commentsData = await commentsRes.json()
+
+        if (!commentsData.items) continue
+
+        // 5. Save comments to database
+        await Promise.all(
+          commentsData.items.map((item: any) => {
+            const comment = item.snippet.topLevelComment.snippet
+            return prisma.comment.upsert({
+              where: { youtubeId: item.id },
+              update: { commentText: comment.textDisplay },
+              create: {
+                videoId: video.id,
+                youtubeId: item.id,
+                commentText: comment.textDisplay,
+                authorName: comment.authorDisplayName,
+              },
+            })
+          })
+        )
+
+        totalComments += commentsData.items.length
+      } catch (e) {
+        console.error(`Failed to fetch comments for video ${video.youtubeId}`, e)
+      }
+    }
+
+    return NextResponse.json({ 
+      success: true, 
+      videos: saved.length,
+      comments: totalComments
+    })
   } catch (error) {
     console.error("Sync error:", error)
     return NextResponse.json({ error: "Sync failed" }, { status: 500 })
   }
 }
+
