@@ -38,10 +38,14 @@ export default async function VideosPage() {
     redirect("/")
   }
 
+  // const channel = await prisma.channel.findFirst({
+  //   where: { userId: session.user.id as string},
+  //   include: { videos: true },
+  // })
   const channel = await prisma.channel.findFirst({
-    where: { userId: session.user.id as string},
-    include: { videos: true },
-  })
+  where: { userId: session?.user?.id as string },
+  include: { videos: true },
+})
 
   const videos = channel?.videos || []
 
