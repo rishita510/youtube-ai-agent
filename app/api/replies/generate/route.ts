@@ -3,10 +3,6 @@ import { prisma } from "@/lib/prisma"
 import { NextResponse } from "next/server"
 import OpenAI from "openai"
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
-
 export async function POST(req: Request) {
   const session = await auth()
 
@@ -14,9 +10,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  })
+
   const { commentId } = await req.json()
 
-  // Get comment with video info
   const comment = await prisma.comment.findUnique({
     where: { id: commentId },
     include: { video: true },
@@ -26,7 +25,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Comment not found" }, { status: 404 })
   }
 
-  // Get user settings
   const settings = await prisma.setting.findUnique({
     where: { userId: session.user.id as string },
   })
@@ -34,7 +32,6 @@ export async function POST(req: Request) {
   const tone = settings?.replyTone || "friendly"
   const customPrompt = settings?.customPrompt || ""
 
-  // Generate AI reply
   const completion = await openai.chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
@@ -56,11 +53,8 @@ export async function POST(req: Request) {
 
   const replyText = completion.choices[0].message.content || ""
 
-  // Save reply to database
-  const reply = await prisma.reply.upsert({
-    where: { id: commentId },
-    update: { replyText, status: "PENDING" },
-    create: {
+  const reply = await prisma.reply.create({
+    data: {
       commentId: comment.id,
       replyText,
       status: "PENDING",
