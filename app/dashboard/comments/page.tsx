@@ -1,70 +1,3 @@
-// import { auth } from "@/auth"
-// import { redirect } from "next/navigation"
-// import { prisma } from "@/lib/prisma"
-
-// export default async function CommentsPage() {
-//   const session = await auth()
-
-//   if (!session?.user?.id) {
-//     redirect("/")
-//   }
-
-//   const channel = await prisma.channel.findFirst({
-//     where: { userId: session?.user?.id as string },
-//     include: {
-//       videos: {
-//         include: {
-//           comments: {
-//             include: {
-//               replies: true,
-//             },
-//           },
-//         },
-//       },
-//     },
-//   })
-
-//   const comments = channel?.videos.flatMap((v) => v.comments) || []
-
-//   return (
-//     <div className="space-y-6">
-//       <h1 className="text-3xl font-bold">Comments</h1>
-//       <p className="text-gray-400">{comments.length} comments found</p>
-
-//       <div className="space-y-4">
-//         {comments.length === 0 ? (
-//           <div className="text-center py-20 text-gray-500">
-//             <p>No comments yet. Sync your channel first.</p>
-//           </div>
-//         ) : (
-//           comments.map((comment) => (
-//             <div key={comment.id} className="bg-gray-900 p-6 rounded-xl space-y-4">
-//               <div>
-//                 <p className="text-sm text-gray-400">{comment.authorName}</p>
-//                 <p className="mt-1">{comment.commentText}</p>
-//               </div>
-
-//               {comment.replies.length > 0 ? (
-//                 <div className="bg-gray-800 p-4 rounded-lg">
-//                   <p className="text-sm text-gray-400 mb-1">AI Reply:</p>
-//                   <p>{comment.replies[0].replyText}</p>
-//                   <span className="text-xs text-yellow-400 mt-2 inline-block">
-//                     {comment.replies[0].status}
-//                   </span>
-//                 </div>
-//               ) : (
-//                 <div className="bg-gray-800 p-4 rounded-lg text-gray-500 text-sm">
-//                   No AI reply yet
-//                 </div>
-//               )}
-//             </div>
-//           ))
-//         )}
-//       </div>
-//     </div>
-//   )
-// }
-
 "use client"
 
 import { useState, useEffect } from "react"
@@ -107,12 +40,26 @@ export default function CommentsPage() {
 
     setComments((prev) =>
       prev.map((c) =>
-        c.id === commentId
-          ? { ...c, replies: [data.reply] }
-          : c
+        c.id === commentId ? { ...c, replies: [data.reply] } : c
       )
     )
     setGenerating(null)
+  }
+
+  const updateReplyStatus = async (commentId: string, replyId: string, status: string) => {
+    await fetch(`/api/replies/${replyId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    })
+
+    setComments((prev) =>
+      prev.map((c) =>
+        c.id === commentId
+          ? { ...c, replies: c.replies.map((r) => r.id === replyId ? { ...r, status } : r) }
+          : c
+      )
+    )
   }
 
   if (loading) return <p className="text-gray-400">Loading comments...</p>
@@ -139,11 +86,24 @@ export default function CommentsPage() {
                 <div className="bg-gray-800 p-4 rounded-lg space-y-2">
                   <p className="text-sm text-gray-400">AI Reply:</p>
                   <p>{comment.replies[0].replyText}</p>
+                  <span className={`text-xs inline-block px-2 py-1 rounded ${
+                    comment.replies[0].status === "APPROVED" ? "bg-green-900 text-green-400" :
+                    comment.replies[0].status === "REJECTED" ? "bg-red-900 text-red-400" :
+                    "bg-yellow-900 text-yellow-400"
+                  }`}>
+                    {comment.replies[0].status}
+                  </span>
                   <div className="flex gap-2 mt-2">
-                    <button className="bg-green-600 text-white text-sm px-4 py-1 rounded-lg hover:bg-green-700">
+                    <button
+                      onClick={() => updateReplyStatus(comment.id, comment.replies[0].id, "APPROVED")}
+                      className="bg-green-600 text-white text-sm px-4 py-1 rounded-lg hover:bg-green-700"
+                    >
                       Approve
                     </button>
-                    <button className="bg-red-600 text-white text-sm px-4 py-1 rounded-lg hover:bg-red-700">
+                    <button
+                      onClick={() => updateReplyStatus(comment.id, comment.replies[0].id, "REJECTED")}
+                      className="bg-red-600 text-white text-sm px-4 py-1 rounded-lg hover:bg-red-700"
+                    >
                       Reject
                     </button>
                     <button
@@ -170,3 +130,4 @@ export default function CommentsPage() {
     </div>
   )
 }
+
